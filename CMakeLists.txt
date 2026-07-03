@@ -14,9 +14,7 @@ add_compile_definitions(_UNICODE UNICODE)
 
 add_link_options(
     /SUBSYSTEM:WINDOWS
-    /DYNAMICBASE 
-    Version.lib
-    Comctl32.lib
+    /DYNAMICBASE
     /MACHINE:X64
 )
 
@@ -26,17 +24,17 @@ add_executable(
         resources/WinApp.rc
         resources/app.manifest
         include/messages.h
-        include/aboutDialog.h
-        src/aboutDialog.cpp
+        include/aboutdialog.h
+        src/aboutdialog.cpp
         include/MainWindow.h
         src/MainWindow.cpp
-        include/notificationIcon.h
-        src/notificationIcon.cpp
         include/notificationIcon.h
         src/notificationIcon.cpp
         include/desktopWatcher.h
         src/desktopWatcher.cpp
         src/winMain.cpp
 )
+
+target_link_libraries(${PROJECT_NAME} Version.lib Comctl32.lib)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)

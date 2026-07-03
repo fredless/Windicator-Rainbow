@@ -16,10 +16,7 @@ void MainWindow::AmendWindowClass(WNDCLASSEXW* wc)
 /// @return window class name
 PCWSTR MainWindow::ClassName() const
 {
-    LoadString(GetModuleHandle(nullptr), IDC_MAIN_MENU,
-            const_cast<LPWSTR>(m_szMainWindowClass), MAX_LOAD_STRING);
-
-    return m_szMainWindowClass;
+    return L"WindicatorClass";
 }
 
 /// @brief Handle windows messages
@@ -56,6 +53,10 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     0,
                     &m_dwThreadId
             );
+
+            if (m_hDesktopThread == nullptr) {
+                DesktopWatcher::ShowErrorMessageBox(m_hWnd, GetLastError());
+            }
             break;
 
         case WM_COMMAND: {
@@ -85,7 +86,20 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
             break;
 
+        case WM_CLOSE:
+            // Installers and "close all windows" broadcasts send WM_CLOSE to
+            // top-level windows; letting DefWindowProc destroy the window
+            // would silently exit the app.  Hide instead -- the app only
+            // exits through the tray menu.
+            m_isVisible = FALSE;
+            Show(SW_HIDE);
+            return 0;
+
         case WM_DESTROY: {
+            if (m_hDesktopThread != nullptr) {
+                CloseHandle(m_hDesktopThread);
+                m_hDesktopThread = nullptr;
+            }
             PostQuitMessage(0);
             return 0;
         }

@@ -1,5 +1,5 @@
 #pragma once
 
 struct Config {
-    unsigned int iconOffset;
+    unsigned int iconOffset{};
 };

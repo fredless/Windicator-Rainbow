@@ -3,6 +3,7 @@
 
 #include <shellapi.h>
 #include <string>
+#include <vector>
 #include <CommCtrl.h>
 
 namespace AboutDialog {
@@ -17,25 +18,32 @@ namespace AboutDialog {
 
                 // extract the version information from the resources
                 wchar_t moduleFileName[MAX_PATH];
-                GetModuleFileName(GetModuleHandle(nullptr), moduleFileName, MAX_PATH);
-                DWORD ptr;
 
-                const auto versionInfoSize = GetFileVersionInfoSize(moduleFileName, &ptr);
-                auto* const versionInfo = new char[versionInfoSize];
+                if (GetModuleFileName(GetModuleHandle(nullptr), moduleFileName, MAX_PATH) != 0) {
+                    DWORD ptr;
 
-                GetFileVersionInfo(moduleFileName, 0, versionInfoSize, versionInfo);
+                    const auto versionInfoSize = GetFileVersionInfoSize(moduleFileName, &ptr);
 
-                UINT pBlockSize;
-                LPVOID pVersionBlock = nullptr;
+                    if (versionInfoSize > 0) {
+                        std::vector<char> versionInfo(versionInfoSize);
 
-                // the code page is fixed to (0409)US English, (04b0)Unicode.  Enhance that someday.
-                VerQueryValue(versionInfo, L"\\StringFileInfo\\040904b0\\FileVersion", &pVersionBlock, &pBlockSize);
-                gstVersionInfo.versionText = static_cast<const wchar_t*>(pVersionBlock);
+                        UINT pBlockSize = 0;
+                        LPVOID pVersionBlock = nullptr;
 
-                delete[] versionInfo;
+                        // the code page is fixed to (0409)US English, (04b0)Unicode.  Enhance that someday.
+                        if (GetFileVersionInfo(moduleFileName, 0, versionInfoSize, versionInfo.data())
+                                && VerQueryValue(versionInfo.data(), L"\\StringFileInfo\\040904b0\\FileVersion",
+                                        &pVersionBlock, &pBlockSize)
+                                && pVersionBlock != nullptr && pBlockSize > 0) {
+                            gstVersionInfo.versionText = static_cast<const wchar_t*>(pVersionBlock);
+                        }
+                    }
+                }
 
                 HWND staticTextHandle = GetDlgItem(hDlg, IDC_VERSION_TEXT);
-                std::wstring versionText = L"Version " + gstVersionInfo.versionText;
+                std::wstring versionText = gstVersionInfo.versionText.empty()
+                        ? L"Version unknown"
+                        : L"Version " + gstVersionInfo.versionText;
                 SetWindowText(staticTextHandle, versionText.c_str());
 
                 return TRUE;

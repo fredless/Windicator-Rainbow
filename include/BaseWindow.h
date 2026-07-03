@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 
 constexpr int MAX_LOAD_STRING = 100;
 
@@ -58,7 +57,9 @@ public:
 
         AmendWindowClass(&wc);
 
-        RegisterClassEx(&wc);
+        if (!RegisterClassEx(&wc) && GetLastError() != ERROR_CLASS_ALREADY_EXISTS) {
+            return FALSE;
+        }
 
         m_hWnd = CreateWindowEx(
                 dwExStyle, wc.lpszClassName, lpWindowName, dwStyle, x, y,

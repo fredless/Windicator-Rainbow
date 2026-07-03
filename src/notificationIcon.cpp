@@ -12,6 +12,23 @@ namespace NotificationIcon {
     HMENU hMenuTrackPopup;
     HMENU hNotifyMenu;
 
+    /// @brief Load the icon for a desktop number, falling back to the "X" icon
+    /// @param hInst The application instance
+    /// @param nDesktop The current desktop number
+    /// @param iconOffset The resource id base for the chosen icon set
+    /// @return icon handle
+    static HICON LoadDesktopIcon(HINSTANCE hInst, UINT nDesktop, UINT iconOffset)
+    {
+        // Numbered icons run from offset + 1 through offset + 10 (the "0" icon
+        // stands in for desktop 10).  There is no icon at offset + 0, so an
+        // unknown desktop (0) or one past 10 gets the "X" icon at offset + 11.
+        if (nDesktop < 1 || nDesktop > 10) {
+            nDesktop = 11;
+        }
+
+        return LoadIcon(hInst, MAKEINTRESOURCE(iconOffset + nDesktop));
+    }
+
     /// @brief Add the notification icon to the system tray
     /// @param hInst The application instance
     /// @param hWndMain The parent window handle
@@ -27,22 +44,44 @@ namespace NotificationIcon {
         LoadStringW(hInst, IDS_APP_TITLE, szTitle, ARRAYSIZE(szTitle));
         StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), szTitle);
 
-        nid.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(iconOffset + nDesktop));
+        nid.hIcon = LoadDesktopIcon(hInst, nDesktop, iconOffset);
         nid.uCallbackMessage = APP_WM_ICON_NOTIFY;
 
-        auto result = Shell_NotifyIcon(NIM_ADD, &nid) ? S_OK : E_FAIL;
+        // During logon the shell can be too busy to accept the icon and
+        // NIM_ADD fails with ERROR_TIMEOUT, so retry a few times.  The add
+        // may also have succeeded even though the call reported a timeout,
+        // or the icon may still be registered from a previous shell session,
+        // so treat a successful NIM_MODIFY as success too.
+        DWORD lastError = ERROR_SUCCESS;
 
-        if (result == E_FAIL) {
-            wchar_t err[256];
-            memset(err, 0, 256);
-            FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_FROM_HMODULE,
-                    nullptr, GetLastError(),
-                    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), err, 255, nullptr);
+        for (int attempt = 0; attempt < 5; attempt++) {
+            if (attempt > 0) {
+                Sleep(1000);
+            }
 
-            OutputDebugString(err);
+            if (Shell_NotifyIcon(NIM_ADD, &nid)) {
+                return S_OK;
+            }
+
+            lastError = GetLastError();
+
+            if (Shell_NotifyIcon(NIM_MODIFY, &nid)) {
+                return S_OK;
+            }
+
+            if (lastError != ERROR_TIMEOUT) {
+                break;
+            }
         }
 
-        return result;
+        wchar_t err[256] = {};
+        FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_FROM_HMODULE,
+                nullptr, lastError,
+                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), err, ARRAYSIZE(err) - 1, nullptr);
+
+        OutputDebugString(err);
+
+        return E_FAIL;
     }
 
     /// @brief Modify an existing notification icon
@@ -54,11 +93,7 @@ namespace NotificationIcon {
     {
         nid.uFlags = NIF_ICON;
 
-        if (nDesktop > 10) {
-            nDesktop = 11;
-        }
-
-        nid.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(iconOffset + nDesktop));
+        nid.hIcon = LoadDesktopIcon(hInst, nDesktop, iconOffset);
 
         auto result = Shell_NotifyIcon(NIM_MODIFY, &nid) ? S_OK : E_FAIL;
 
@@ -86,6 +121,11 @@ namespace NotificationIcon {
         // a handle to the first shortcut menu.
         hMenuTrackPopup = GetSubMenu(hNotifyMenu, 0);
 
+        if (hMenuTrackPopup == nullptr) {
+            DestroyMenu(hNotifyMenu);
+            return;
+        }
+
         SetForegroundWindow(hWnd);
 
         // Display the shortcut menu. Track the right mouse
@@ -93,6 +133,10 @@ namespace NotificationIcon {
         TrackPopupMenu(hMenuTrackPopup,
                 TPM_BOTTOMALIGN | TPM_RIGHTALIGN | TPM_RIGHTBUTTON, point.x,
                 point.y, 0, hWnd, nullptr);
+
+        // Required after TrackPopupMenu on a notification icon so the menu
+        // dismisses when the user clicks elsewhere (see KB135788).
+        PostMessage(hWnd, WM_NULL, 0, 0);
 
         DestroyMenu(hNotifyMenu);
     }

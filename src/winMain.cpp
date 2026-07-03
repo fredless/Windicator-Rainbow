@@ -3,6 +3,7 @@
 #include "../resources/resource.h"
 #include "../include/Config.h"
 
+#include <CommCtrl.h>
 #include <string>
 #include <memory>
 #include <map>
@@ -17,10 +18,15 @@ INT WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
     HANDLE mutex = CreateMutex(nullptr, TRUE, mutexName.c_str());
 
-    if (GetLastError() == ERROR_ALREADY_EXISTS) {
+    if (mutex != nullptr && GetLastError() == ERROR_ALREADY_EXISTS) {
         MessageBox(nullptr, L"An instance of Windicator is already running", L"Windicator", MB_ICONEXCLAMATION);
         return 8;
     }
+
+    // The about dialog uses a SysLink control, which is only registered
+    // once common controls are initialized with ICC_LINK_CLASS.
+    INITCOMMONCONTROLSEX icc = { sizeof(icc), ICC_LINK_CLASS };
+    InitCommonControlsEx(&icc);
 
     std::wstringstream wss(lpCmdLine);
     std::wstring arg;
@@ -53,7 +59,8 @@ INT WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
     std::unique_ptr<MainWindow> mainWindow = std::make_unique<MainWindow>(config);
 
     if (!mainWindow->Create(szWindowName, WS_OVERLAPPED)) {
-        return 0;
+        MessageBox(nullptr, L"Failed to create the main window", L"Windicator", MB_ICONERROR);
+        return 1;
     }
 
     mainWindow->Show(SW_HIDE);
@@ -62,16 +69,25 @@ INT WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
     //     LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MAIN_MENU));
 
     MSG msg = {};
+    BOOL bRet;
 
-    while (GetMessage(&msg, nullptr, 0, 0)) {
+    while ((bRet = GetMessage(&msg, nullptr, 0, 0)) != 0) {
+        // GetMessage returns -1 on error; treating it as a normal message
+        // would dispatch garbage.
+        if (bRet == -1) {
+            break;
+        }
+
         // if (!TranslateAccelerator(msg.hwnd, hAccelerators, &msg)) {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         // }
     }
 
-    ReleaseMutex(mutex);
-    CloseHandle(mutex);
+    if (mutex != nullptr) {
+        ReleaseMutex(mutex);
+        CloseHandle(mutex);
+    }
 
     return 0;
 }
