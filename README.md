@@ -1,6 +1,6 @@
 # Windicator - Rainbow Edition
 
-Forked from 
+Forked from Wielding/Windicator to suit, no longer maintained. 
 
 This is a simple Windows 11 application that shows an indicator in the system tray displaying the current virtual
 desktop number. It does not work on Windows 10 due to Microsoft changing the registry keys.
@@ -28,7 +28,6 @@ reading the number. That icon style is based on the blue icon set contributed to
 ![](resources/small_3.ico)
 ![](resources/small_4.ico)
 ![](resources/small_5.ico)
-
 
 If you are just downloading the release executable you will need the latest Microsoft Visual C++ Redistributable if you
 don't have it already. You can check if you already have it by just running the application. If you don't have the
