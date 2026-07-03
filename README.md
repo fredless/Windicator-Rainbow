@@ -1,9 +1,11 @@
-# Windicator
+# Windicator - Rainbow Edition
+
+Forked from 
 
 This is a simple Windows 11 application that shows an indicator in the system tray displaying the current virtual
 desktop number. It does not work on Windows 10 due to Microsoft changing the registry keys.
 
-I beleive it also requires at least the first Windows 11 feature update due to Microsoft changing the registry location for
+I believe it also requires at least the first Windows 11 feature update due to Microsoft changing the registry location for
 the values once again.
 
 The application maxes out at 10 virtual desktops since anything more than 1 digit is difficult to show nicely in the
@@ -17,15 +19,15 @@ change desktops. It uses very little memory and virtually no CPU.
 There is no installer for this application since it is a single Windows executable. Just put it wherever you want it and
 run it. Or you can create a shortcut to it and place that in your shell:startup folder.
 
-There are 3 icon types to choose from.  
-
-1. No command line options will give you black numbers on a white background.
-2. Passing the option **--dark** will show white numbers on a black background
-3. And thanks to [Lisa Jackson](https://github.com/LisaJackson24-2) **--blue** will give you very nicely styled white on blue icons
+Each desktop number has its own distinct icon color, so you can recognize the desktop at a glance without
+reading the number. That icon style is based on the blue icon set contributed to the fork parent     by
+[Lisa Jackson](https://github.com/LisaJackson24-2).
 
 ![](resources/small_1.ico)
-![](resources/small_dark_2.ico)
-![](resources/blue_small_3.ico)
+![](resources/small_2.ico)
+![](resources/small_3.ico)
+![](resources/small_4.ico)
+![](resources/small_5.ico)
 
 
 If you are just downloading the release executable you will need the latest Microsoft Visual C++ Redistributable if you

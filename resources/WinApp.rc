@@ -53,52 +53,6 @@ IDI_SMALL_0             ICON                    "small_0.ico"
 
 IDI_SMALL_X             ICON                    "small_x.ico"
 
-IDI_BLUE_SMALL_1             ICON                    "blue_small_1.ico"
-
-IDI_BLUE_SMALL_2             ICON                    "blue_small_2.ico"
-
-IDI_BLUE_SMALL_3             ICON                    "blue_small_3.ico"
-
-IDI_BLUE_SMALL_4             ICON                    "blue_small_4.ico"
-
-IDI_BLUE_SMALL_5             ICON                    "blue_small_5.ico"
-
-IDI_BLUE_SMALL_6             ICON                    "blue_small_6.ico"
-
-IDI_BLUE_SMALL_7             ICON                    "blue_small_7.ico"
-
-IDI_BLUE_SMALL_8             ICON                    "blue_small_8.ico"
-
-IDI_BLUE_SMALL_9             ICON                    "blue_small_9.ico"
-
-IDI_BLUE_SMALL_0             ICON                    "blue_small_0.ico"
-
-IDI_BLUE_SMALL_X             ICON                    "blue_small_x.ico"
-
-IDI_DARK_SMALL_1             ICON                    "small_dark_1.ico"
-
-IDI_DARK_SMALL_2             ICON                    "small_dark_2.ico"
-
-IDI_DARK_SMALL_3             ICON                    "small_dark_3.ico"
-
-IDI_DARK_SMALL_4             ICON                    "small_dark_4.ico"
-
-IDI_DARK_SMALL_5             ICON                    "small_dark_5.ico"
-
-IDI_DARK_SMALL_6             ICON                    "small_dark_6.ico"
-
-IDI_DARK_SMALL_7             ICON                    "small_dark_7.ico"
-
-IDI_DARK_SMALL_8             ICON                    "small_dark_8.ico"
-
-IDI_DARK_SMALL_9             ICON                    "small_dark_9.ico"
-
-IDI_DARK_SMALL_0             ICON                    "small_dark_0.ico"
-
-IDI_DARK_SMALL_X             ICON                    "small_dark_x.ico"
-
-
-
 
 /////////////////////////////////////////////////////////////////////////////
 //

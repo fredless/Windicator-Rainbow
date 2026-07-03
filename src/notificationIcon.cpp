@@ -15,18 +15,17 @@ namespace NotificationIcon {
     /// @brief Load the icon for a desktop number, falling back to the "X" icon
     /// @param hInst The application instance
     /// @param nDesktop The current desktop number
-    /// @param iconOffset The resource id base for the chosen icon set
     /// @return icon handle
-    static HICON LoadDesktopIcon(HINSTANCE hInst, UINT nDesktop, UINT iconOffset)
+    static HICON LoadDesktopIcon(HINSTANCE hInst, UINT nDesktop)
     {
-        // Numbered icons run from offset + 1 through offset + 10 (the "0" icon
-        // stands in for desktop 10).  There is no icon at offset + 0, so an
-        // unknown desktop (0) or one past 10 gets the "X" icon at offset + 11.
+        // Numbered icons run from IDI_SMALL_START + 1 through + 10 (the "0"
+        // icon stands in for desktop 10).  There is no icon at + 0, so an
+        // unknown desktop (0) or one past 10 gets the "X" icon at + 11.
         if (nDesktop < 1 || nDesktop > 10) {
             nDesktop = 11;
         }
 
-        return LoadIcon(hInst, MAKEINTRESOURCE(iconOffset + nDesktop));
+        return LoadIcon(hInst, MAKEINTRESOURCE(IDI_SMALL_START + nDesktop));
     }
 
     /// @brief Add the notification icon to the system tray
@@ -34,7 +33,7 @@ namespace NotificationIcon {
     /// @param hWndMain The parent window handle
     /// @param nDesktop The current desktop number
     /// @return result
-    HRESULT Add(HINSTANCE hInst, HWND hWndMain, UINT nDesktop, UINT iconOffset)
+    HRESULT Add(HINSTANCE hInst, HWND hWndMain, UINT nDesktop)
     {
         nid.cbSize = sizeof(nid);
         nid.hWnd = hWndMain;
@@ -44,7 +43,7 @@ namespace NotificationIcon {
         LoadStringW(hInst, IDS_APP_TITLE, szTitle, ARRAYSIZE(szTitle));
         StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), szTitle);
 
-        nid.hIcon = LoadDesktopIcon(hInst, nDesktop, iconOffset);
+        nid.hIcon = LoadDesktopIcon(hInst, nDesktop);
         nid.uCallbackMessage = APP_WM_ICON_NOTIFY;
 
         // During logon the shell can be too busy to accept the icon and
@@ -89,11 +88,11 @@ namespace NotificationIcon {
     /// @param hWndMain The parent window handle
     /// @param nDesktop The current desktop number
     /// @return result
-    HRESULT Modify(HINSTANCE hInst, HWND hWndMain, UINT nDesktop, UINT iconOffset)
+    HRESULT Modify(HINSTANCE hInst, HWND hWndMain, UINT nDesktop)
     {
         nid.uFlags = NIF_ICON;
 
-        nid.hIcon = LoadDesktopIcon(hInst, nDesktop, iconOffset);
+        nid.hIcon = LoadDesktopIcon(hInst, nDesktop);
 
         auto result = Shell_NotifyIcon(NIM_MODIFY, &nid) ? S_OK : E_FAIL;
 

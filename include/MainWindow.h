@@ -3,9 +3,6 @@
 #include "aboutdialog.h"
 #include "BaseWindow.h"
 #include "desktopWatcher.h"
-#include "Config.h"
-
-#include <memory>
 
 class MainWindow : public BaseWindow<MainWindow> {
 protected:
@@ -15,10 +12,8 @@ protected:
 
     DesktopWatcher::DesktopWatcherData m_stWatcherData{};
 
-    std::shared_ptr<Config> m_config;
-
 public:
-    MainWindow(std::shared_ptr<Config> config);
+    MainWindow() = default;
     virtual ~MainWindow() = default;
 
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
