@@ -127,6 +127,8 @@ namespace DesktopWatcher {
     {
         auto* const pData = static_cast<DesktopWatcherData*>(lParam);
 
+        constexpr auto KEY_PATH = L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VirtualDesktops";
+
         DWORD dwFilter = REG_NOTIFY_CHANGE_NAME |
                 REG_NOTIFY_CHANGE_ATTRIBUTES |
                 REG_NOTIFY_CHANGE_LAST_SET |
@@ -135,13 +137,7 @@ namespace DesktopWatcher {
         REGSAM samDesired = KEY_READ | KEY_NOTIFY;
         HKEY hKey = nullptr;
 
-        auto status = RegOpenKeyEx(
-                HKEY_CURRENT_USER,
-                L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VirtualDesktops",
-                0,
-                samDesired,
-                &hKey
-        );
+        auto status = RegOpenKeyEx(HKEY_CURRENT_USER, KEY_PATH, 0, samDesired, &hKey);
 
         if (status != ERROR_SUCCESS) {
             ShowErrorMessageBox(pData->hWnd, status);
@@ -157,15 +153,18 @@ namespace DesktopWatcher {
             return FALSE;
         }
 
-        // Transient failures are retried; only a persistent failure streak
-        // stops the watcher, so one hiccup does not freeze the icon for the
-        // rest of the session.
-        constexpr UINT MAX_CONSECUTIVE_ERRORS = 10;
-        UINT consecutiveErrors = 0;
+        // The change notification gives an instant reaction when it works, but
+        // a registration can be silently lost (key recreation, shell churn),
+        // so the icon must never depend on it: every wake -- notification or
+        // timeout -- re-reads the desktop number and posts on change.  Worst
+        // case the icon lags one poll interval.  The bounded wait also means
+        // the exit flag is always noticed, so shutdown is clean.
+        constexpr DWORD POLL_INTERVAL_MS = 1000;
+
+        UINT lastPosted = GetCurrentDesktopNumber(hKey);
 
         // Report the desktop we start on before waiting for changes.
-        PostMessage(pData->hWnd, APP_WM_DESKTOP_CHANGE, 0,
-                MAKELPARAM(GetCurrentDesktopNumber(hKey), 0));
+        PostMessage(pData->hWnd, APP_WM_DESKTOP_CHANGE, 0, MAKELPARAM(lastPosted, 0));
 
         // Only one notification may be armed per set of parameters at a time;
         // re-arming while one is pending piles up registrations.
@@ -173,9 +172,6 @@ namespace DesktopWatcher {
 
         while (true) {
 
-            // This will probably only trigger if _TIDY_TIMEOUT is defined since we are likely
-            // waiting for a registry change event when the parent process sets keepGoing to FALSE
-            // and terminates.
             {
                 std::lock_guard lock(pData->lock);
                 if (!pData->keepGoing) {
@@ -184,64 +180,69 @@ namespace DesktopWatcher {
             }
 
             if (!armed) {
-                ResetEvent(hEvent);
 
-                // Watch the registry key for a change of buffer.
-                status = RegNotifyChangeKeyValue(hKey,
-                        TRUE,
-                        dwFilter,
-                        hEvent,
-                        TRUE);
-
-                if (status != ERROR_SUCCESS) {
-                    if (++consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
-                        ShowErrorMessageBox(pData->hWnd, status);
-                        break;
+                // Reopen the key if a previous pass dropped a stale handle.
+                if (hKey == nullptr) {
+                    if (RegOpenKeyEx(HKEY_CURRENT_USER, KEY_PATH, 0, samDesired, &hKey) != ERROR_SUCCESS) {
+                        hKey = nullptr;
                     }
-                    Sleep(1000);
-                    continue;
                 }
 
-                armed = TRUE;
+                if (hKey != nullptr) {
+                    ResetEvent(hEvent);
+
+                    status = RegNotifyChangeKeyValue(hKey,
+                            TRUE,
+                            dwFilter,
+                            hEvent,
+                            TRUE);
+
+                    if (status == ERROR_SUCCESS) {
+                        armed = TRUE;
+                    }
+                    else {
+                        // The handle has likely gone stale (e.g. the key was
+                        // recreated).  Drop it; polling carries on regardless
+                        // and the next pass reopens it.
+                        RegCloseKey(hKey);
+                        hKey = nullptr;
+                    }
+                }
             }
 
-            // This is an optional build definition to use a time-out to make sure we can catch the program exit
-            // so the registry handle can be closed.  It is probably not needed since this app will likely
-            // run the duration of your session so leaking a single registry handle is not an issue.  The system
-            // would eventually clean it up anyway.  If you want to use it uncomment the _TIDY_TIMEOUT definition
-            // in the CMakeLists.txt before you build.  It will create a tiny increase in CPU usage since the
-            // thread will loop instead of an infinite wait event for a registry change.
-#ifdef _TIDY_TIMEOUT
-            auto timeout = 500;
-#else
-            auto timeout = INFINITE;
-#endif
-            auto result = WaitForSingleObject(hEvent, timeout);
+            // Un-armed this is simply the poll interval.
+            auto result = WaitForSingleObject(hEvent, POLL_INTERVAL_MS);
 
-            if (result == WAIT_TIMEOUT) {
+            if (result == WAIT_OBJECT_0) {
+                // Notification consumed; re-arm on the next pass.
+                armed = FALSE;
+            }
+            else if (result == WAIT_FAILED) {
+                Sleep(POLL_INTERVAL_MS);
                 continue;
             }
 
-            if (result != WAIT_OBJECT_0) {
-                if (++consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
-                    ShowErrorMessageBox(pData->hWnd, GetLastError());
-                    break;
-                }
-                Sleep(1000);
-                continue;
-            }
-
-            armed = FALSE;
-            consecutiveErrors = 0;
-
+            // GetCurrentDesktopNumber opens its own handle when given null.
             auto desktopNumber = GetCurrentDesktopNumber(hKey);
-            PostMessage(pData->hWnd, APP_WM_DESKTOP_CHANGE, 0, MAKELPARAM(desktopNumber, 0));
+
+            if (desktopNumber != 0 && desktopNumber != lastPosted) {
+
+                if (result == WAIT_TIMEOUT) {
+                    // The desktop changed without a notification -- the
+                    // registration is presumed dead, so rebuild it.
+                    armed = FALSE;
+                }
+
+                lastPosted = desktopNumber;
+                PostMessage(pData->hWnd, APP_WM_DESKTOP_CHANGE, 0, MAKELPARAM(desktopNumber, 0));
+            }
         }
 
-        // We most likely will not hit this unless _TIDY_TIMEOUT is defined at compile time or
-        // an error condition occurred.
         CloseHandle(hEvent);
-        RegCloseKey(hKey);
+
+        if (hKey != nullptr) {
+            RegCloseKey(hKey);
+        }
 
         return TRUE;
     }

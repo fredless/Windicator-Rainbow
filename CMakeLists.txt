@@ -14,12 +14,6 @@ if(MSVC)
     set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG /OPT:REF /OPT:ICF /INCREMENTAL:NO")
 endif()
 
-# Uncomment the following line to add timeout to wait so that the
-# registry handle can be released.  Not really needed and causes
-# a very tiny bit of extra CPU to keep checking for exit condition.
-#
-#add_compile_definitions(_TIDY_TIMEOUT)
-
 add_link_options(
     /SUBSYSTEM:WINDOWS
     /DYNAMICBASE

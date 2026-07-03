@@ -65,9 +65,9 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     std::lock_guard lock(m_stWatcherData.lock);
                     m_stWatcherData.keepGoing = FALSE;
                 }
-#ifdef _TIDY_TIMEOUT
-                    WaitForSingleObject(m_hDesktopThread, 2000);
-#endif
+                    // The watcher wakes at least once per poll interval, so
+                    // it notices the exit flag and finishes promptly.
+                    WaitForSingleObject(m_hDesktopThread, 3000);
                     NotificationIcon::Remove();
                     DestroyWindow(hWnd);
                     break;
