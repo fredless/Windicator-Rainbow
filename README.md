@@ -29,10 +29,11 @@ reading the number. That icon style is based on the blue icon set contributed to
 ![](resources/small_4.ico)
 ![](resources/small_5.ico)
 
-If you are just downloading the release executable you will need the latest Microsoft Visual C++ Redistributable if you
-don't have it already. You can check if you already have it by just running the application. If you don't have the
-runtime a dialog will pop up telling you that it is missing. If that happens the runtime can be downloaded directly from
-[here](https://aka.ms/vs/17/release/vc_redist.x64.exe) or navigate to
+If you are just downloading the release executable you will need the Microsoft Visual C++ Redistributable
+(x64, version 14.51 or newer) if you don't have it already. You can check if you already have it by just running the
+application. If you don't have the runtime a dialog will pop up telling you that it is missing. If that happens the
+runtime can be downloaded directly from
+[here](https://aka.ms/vs/18/release/vc_redist.x64.exe) or navigate to
 https://support.microsoft.com/en-us/topic/the-latest-supported-visual-c-downloads-2647da03-1eea-4433-9aff-95f26a218cc0
 and select the x64 download.
 
