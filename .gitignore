@@ -4,5 +4,7 @@
 cmake-build-*
 out
 build
+build-*
+release
 WinApp.aps
 CMakeSettings.json
