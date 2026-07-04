@@ -1,6 +1,6 @@
 # Windicator - Rainbow Edition
 
-*Forked from Wielding/Windicator to suit my purposes, no longer maintained. I wanted something that showed a visual color distinguish so I could more quickly understand which desktop I was on. I was also having problems with the fork parent stopping silently from time to time, so I've tried to address that and make the new utility smaller overall.* 
+*Forked from Wielding/Windicator (which is no longer maintained by the author) to suit my purposes. I wanted something that showed a visual color distinguish so I could more quickly understand which desktop I was on. I was also having problems with the fork parent stopping silently from time to time, so I've tried to address that and make the new utility smaller overall.* 
 
 This is a simple Windows 11 application that shows an indicator in the system tray displaying the current virtual
 desktop number. It does not work on Windows 10 due to Microsoft changing the registry keys.
